@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: Inter, system-ui, sans-serif;
+        background: #1a1a1a;
+        color: #e0e0e0;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      h1 {
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: #fff;
+      }
+
+      .tagline {
+        font-size: 12px;
+        color: #888;
+        margin-bottom: 16px;
+      }
+
+      .input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        flex: 1;
+        min-height: 0;
+      }
+
+      label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #aaa;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      textarea {
+        flex: 1;
+        background: #252525;
+        border: 1px solid #333;
+        border-radius: 8px;
+        color: #e0e0e0;
+        font-family: Inter, system-ui, sans-serif;
+        font-size: 14px;
+        padding: 12px;
+        resize: none;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+
+      textarea:focus {
+        border-color: #6c5ce7;
+      }
+
+      textarea::placeholder {
+        color: #555;
+      }
+
+      .api-key-row {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .api-key-row input {
+        flex: 1;
+        background: #252525;
+        border: 1px solid #333;
+        border-radius: 6px;
+        color: #e0e0e0;
+        font-family: monospace;
+        font-size: 12px;
+        padding: 8px 10px;
+        outline: none;
+      }
+
+      .api-key-row input:focus {
+        border-color: #6c5ce7;
+      }
+
+      .theme-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      .theme-option {
+        flex: 1;
+        padding: 8px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        font-size: 12px;
+        font-weight: 600;
+        transition: border-color 0.15s;
+      }
+
+      .theme-option.selected {
+        border-color: #6c5ce7;
+      }
+
+      .theme-option:hover {
+        border-color: #555;
+      }
+
+      .theme-dark {
+        background: #111;
+        color: #fff;
+      }
+
+      .theme-light {
+        background: #f5f5f5;
+        color: #111;
+      }
+
+      .theme-accent {
+        background: #6c5ce7;
+        color: #fff;
+      }
+
+      button {
+        margin-top: 12px;
+        padding: 12px;
+        background: #6c5ce7;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.15s, opacity 0.15s;
+      }
+
+      button:hover {
+        background: #5a4bd1;
+      }
+
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .status {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #888;
+        text-align: center;
+        min-height: 18px;
+      }
+
+      .status.error {
+        color: #e74c3c;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Godma</h1>
+    <p class="tagline">Describe it. Claude builds it in Figma.</p>
+
+    <div class="input-group">
+      <label>Prompt</label>
+      <textarea
+        id="prompt"
+        placeholder="Make a 6-slide pitch deck for a pet adoption app called PawMatch. Modern, clean, purple accent."
+      ></textarea>
+
+      <label>Theme</label>
+      <div class="theme-row">
+        <div class="theme-option theme-dark selected" data-theme="dark" onclick="selectTheme('dark')">Dark</div>
+        <div class="theme-option theme-light" data-theme="light" onclick="selectTheme('light')">Light</div>
+        <div class="theme-option theme-accent" data-theme="accent" onclick="selectTheme('accent')">Bold</div>
+      </div>
+
+      <label>Claude API Key</label>
+      <div class="api-key-row">
+        <input type="password" id="apiKey" placeholder="sk-ant-..." />
+      </div>
+    </div>
+
+    <button id="generateBtn" onclick="generate()">Generate</button>
+    <div class="status" id="status"></div>
+
+    <script>
+      const THEMES = {
+        dark: {
+          bgColor: { r: 0.1, g: 0.1, b: 0.1 },
+          textColor: { r: 0.94, g: 0.94, b: 0.94 },
+          accentColor: { r: 0.42, g: 0.36, b: 0.91 },
+          fontFamily: "Inter",
+        },
+        light: {
+          bgColor: { r: 0.96, g: 0.96, b: 0.96 },
+          textColor: { r: 0.1, g: 0.1, b: 0.1 },
+          accentColor: { r: 0.42, g: 0.36, b: 0.91 },
+          fontFamily: "Inter",
+        },
+        accent: {
+          bgColor: { r: 0.42, g: 0.36, b: 0.91 },
+          textColor: { r: 1, g: 1, b: 1 },
+          accentColor: { r: 1, g: 0.84, b: 0 },
+          fontFamily: "Inter",
+        },
+      };
+
+      let selectedTheme = "dark";
+
+      function selectTheme(theme) {
+        selectedTheme = theme;
+        document.querySelectorAll(".theme-option").forEach((el) => {
+          el.classList.toggle("selected", el.dataset.theme === theme);
+        });
+      }
+
+      async function generate() {
+        const prompt = document.getElementById("prompt").value.trim();
+        const apiKey = document.getElementById("apiKey").value.trim();
+        const btn = document.getElementById("generateBtn");
+        const status = document.getElementById("status");
+
+        if (!prompt) {
+          status.textContent = "Enter a prompt first.";
+          status.className = "status error";
+          return;
+        }
+        if (!apiKey) {
+          status.textContent = "Enter your Claude API key.";
+          status.className = "status error";
+          return;
+        }
+
+        btn.disabled = true;
+        status.textContent = "Generating with Claude...";
+        status.className = "status";
+
+        try {
+          const design = await callClaude(prompt, apiKey);
+          status.textContent = "Building in Figma...";
+          parent.postMessage({ pluginMessage: { type: "generate", design } }, "*");
+        } catch (err) {
+          status.textContent = err.message || "Something went wrong.";
+          status.className = "status error";
+          btn.disabled = false;
+        }
+      }
+
+      async function callClaude(prompt, apiKey) {
+        const theme = THEMES[selectedTheme];
+        const systemPrompt = `You are Godma, a design generator. Given a user's description, output a JSON object representing a slide deck or design.
+
+Output ONLY valid JSON with this exact structure (no markdown, no explanation):
+{
+  "title": "Deck Title",
+  "slides": [
+    {
+      "layout": "title" | "content" | "split" | "bullets" | "quote" | "blank",
+      "title": "optional slide title",
+      "subtitle": "optional subtitle (title slides)",
+      "body": "optional body text",
+      "bullets": ["optional", "bullet", "points"],
+      "quote": "optional quote text (quote slides)",
+      "attribution": "optional quote attribution"
+    }
+  ],
+  "theme": ${JSON.stringify(theme)}
+}
+
+Rules:
+- First slide should usually be layout "title"
+- Use a mix of layouts for visual variety
+- Keep text concise — this is a presentation, not an essay
+- Typically 5-10 slides unless the user specifies
+- The theme object is already provided — include it as-is in your response`;
+
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "anthropic-dangerous-direct-browser-access": "true",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-4-20250514",
+            max_tokens: 4096,
+            system: systemPrompt,
+            messages: [{ role: "user", content: prompt }],
+          }),
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || `API error ${res.status}`);
+        }
+
+        const data = await res.json();
+        const text = data.content[0].text;
+
+        try {
+          return JSON.parse(text);
+        } catch {
+          // Try extracting JSON from markdown code block
+          const match = text.match(/```(?:json)?\s*([\s\S]*?)```/);
+          if (match) return JSON.parse(match[1]);
+          throw new Error("Claude returned invalid JSON. Try again.");
+        }
+      }
+
+      // Listen for completion
+      window.onmessage = (event) => {
+        const msg = event.data.pluginMessage;
+        if (msg?.type === "done") {
+          document.getElementById("status").textContent = "Done! Check your canvas.";
+          document.getElementById("generateBtn").disabled = false;
+        }
+      };
+
+      // Persist API key in client storage
+      const savedKey = localStorage.getItem("godma-api-key");
+      if (savedKey) document.getElementById("apiKey").value = savedKey;
+      document.getElementById("apiKey").addEventListener("change", (e) => {
+        localStorage.setItem("godma-api-key", e.target.value);
+      });
+    </script>
+  </body>
+</html>

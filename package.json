@@ -1,0 +1,26 @@
+{
+  "name": "godma",
+  "version": "1.0.0",
+  "description": "Claude-powered design generator for Figma",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "watch": "node build.mjs && echo 'Watching...' && fswatch -o src | xargs -n1 -I{} node build.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KnickKnackLabs/godma.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/KnickKnackLabs/godma/issues"
+  },
+  "homepage": "https://github.com/KnickKnackLabs/godma#readme",
+  "devDependencies": {
+    "@figma/plugin-typings": "^1.124.0",
+    "esbuild": "^0.28.0",
+    "typescript": "^6.0.2"
+  }
+}
